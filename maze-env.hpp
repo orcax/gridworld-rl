@@ -63,6 +63,7 @@ class MazeEnv {
     void freeMaze();
     void start(int row, int col);
     int act(const Cell& cell, int action);
+    void valueIterate(float gamma=0.9);
     void prtMaze() const;
     vector<int> getActions() const;
     Cell getCell(int row, int col) const;
@@ -74,8 +75,11 @@ class MazeEnv {
     int rows, cols;
     Cell** maze;
     int** rewards;
+    double** values;
     Cell currCell;
     vector<int> actions;
+
+    Cell nextCell(const Cell& cell, int action);
 
 };
 

@@ -9,13 +9,15 @@
 int main(int argc, char** argv) {
   srand(time(NULL));
 
-  MazeEnv me("map/map2.txt");
+  MazeEnv me("map/map1.txt");
   QLearningAgent agent(me.getActions(), 0.9, 0.9);
   Cell state1, state2;
   action_t action;
   value_t reward;
 
-  for(int i=0;i<200000;i++) {
+  me.valueIterate();
+
+  for(int i=0;i<1000000;i++) {
     me.start(0, 0);
     do {
       state1 = me.getCurrCell();
@@ -25,9 +27,10 @@ int main(int argc, char** argv) {
       agent.update(state1.str(), action, state2.str(), reward);
       value_t qval = agent.get(state1.str(), action);
       //cout << state1 << " " << action << " " << reward << " " << qval << endl;
-    } while(state1.type != GOAL);
+    } while(state2.type != GOAL);
   }
 
+  cout << "Q Values:" << endl;
   for(int r=0;r<me.getRows();++r) {
     for(int c=0;c<me.getCols();++c) {
       Cell state = me.getCell(r, c);
@@ -36,6 +39,8 @@ int main(int argc, char** argv) {
     }
     cout << endl;
   }
+
+  cout << "Best Actions:" << endl;
   for(int r=0;r<me.getRows();++r) {
     for(int c=0;c<me.getCols();++c) {
       Cell state = me.getCell(r, c);

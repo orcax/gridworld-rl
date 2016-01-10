@@ -15,6 +15,7 @@ MazeEnv::MazeEnv(string path) {
   actions.push_back(SOUTH);
   actions.push_back(WEST);
   actions.push_back(EAST);
+  values = NULL;
 }
 
 MazeEnv::~MazeEnv() {
@@ -57,6 +58,20 @@ void MazeEnv::freeMaze() {
     free(maze);
     maze = NULL;
   }
+  if(rewards != NULL) {
+    for(int i=0;i<rows;++i) {
+      free(rewards[i]);
+    }
+    free(rewards);
+    rewards = NULL;
+  }
+  if(values != NULL) {
+    for(int i=0;i<rows;++i) {
+      free(values[i]);
+    }
+    free(values);
+    values = NULL;
+  }
 }
 
 void MazeEnv::start(int row, int col) {
@@ -66,9 +81,9 @@ void MazeEnv::start(int row, int col) {
 
 int MazeEnv::act(const Cell& cell, int action) {
   // 80% for specified action, 20% for rest of actions
-  if(rand() % 100 + 1 <= 20) {
-    action = actions[rand() % actions.size()];
-  }
+  //if(rand() % 100 + 1 <= 20) {
+  //  action = actions[rand() % actions.size()];
+  //}
   int row = cell.row, col = cell.col;
   switch(action) {
     case NORTH: --row; break;
@@ -84,7 +99,71 @@ int MazeEnv::act(const Cell& cell, int action) {
   this->currCell.row = row; 
   this->currCell.col = col; 
   this->currCell.type = maze[row][col].type;
-  return rewards[cell.row][cell.col]; // reward for current state
+  return rewards[row][col]; // reward for current state
+}
+
+Cell MazeEnv::nextCell(const Cell& cell, int action) {
+  //if(rand() % 100 + 1 <= 20) {
+  //  action = actions[rand() % actions.size()];
+  //}
+  int row = cell.row, col = cell.col;
+  switch(action) {
+    case NORTH: --row; break;
+    case SOUTH: ++row; break;
+    case WEST: --col; break;
+    case EAST: ++col; break;
+  }
+  if(row < 0 || row >= rows || col < 0 || col >= cols || 
+      maze[row][col].type == WALL || maze[cell.row][cell.col].type == GOAL) {
+    row = cell.row;
+    col = cell.col;
+  }
+  Cell newCell;
+  newCell.row = row;
+  newCell.col = col;
+  newCell.type = maze[row][col].type; 
+  return newCell;
+}
+
+void MazeEnv::valueIterate(float gamma) {
+  values = (double**) malloc(sizeof(double*) * rows);
+  for(int r=0;r<rows;++r) {
+    values[r] = (double*) malloc(sizeof(double) * cols);
+    for(int c=0;c<cols;++c) {
+      values[r][c] = 0.0;
+    }
+  }
+  for(int i=0;i<10000;++i) {
+    for(int r=0;r<rows;++r) {
+      for(int c=0;c<cols;++c) {
+        double maxv = -9999;
+        for(int a=0;a<actions.size();++a) {
+          Cell cell = nextCell(maze[r][c], actions[a]);
+          double tmp = rewards[cell.row][cell.col] + gamma * values[cell.row][cell.col];
+          maxv = tmp > maxv ? tmp : maxv;
+        }
+        values[r][c] = maxv;
+      }
+    }
+  }
+  //double maxv = -9999;
+  //for(int r=0;r<rows;++r) {
+  //  for(int c=0;c<cols;++c) {
+  //    if(values[r][c] > maxv) maxv = values[r][c];
+  //  }
+  //}
+  //for(int r=0;r<rows;++r) {
+  //  for(int c=0;c<cols;++c) {
+  //    values[r][c] /= maxv;
+  //  }
+  //}
+  cout << "Value Iteration:" << endl;
+  for(int r=0;r<rows;++r) {
+    for(int c=0;c<cols;++c) {
+      printf("%.2f ", values[r][c]);
+    }
+    cout << endl;
+  }
 }
 
 void MazeEnv::prtMaze() const {
